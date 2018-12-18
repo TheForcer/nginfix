@@ -1,2 +1,2 @@
 # nginfix
-Bash script to automate the creation of nginx vhosts and retrieval of ECC wildcard certificates from LE.
+The main purpose of this script is to automate the creation of nginx-vhost-files for serveral web services which need nginx as a proxy, including an easy way to create the required DNS entries when using a supported domain provider. With the arrival of LetsEncrypt wildcard certificates (+ ECC certificate support via acme.sh), the script provides a secure web server config out of the box for all your subdomain needs.
