@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration INWX credentials / Server IPs #####################################
-USERNAME=""
-PASSWORD=""
+USERNAME="sclife"
+PASSWORD="C2PSv9sLbLm8skbUZq4G"
 APIHOST="https://api.domrobot.com/xmlrpc/"
 IPV4=""
 IPV6=""
@@ -151,25 +151,26 @@ function checkCertReceival {
 		echo -e "${CRED}Something went wrong with the certificate creation. Please double-check your credentials and the domain you entered.${CEND}"
 		exit 1
 	fi
-	if [[ "$1" -eq "ecc" ]]
-	then
-		echo -e "${CGREEN}Your ECC wildcard certificate has been successfully created. You will find your files here:${CEND}"
-		echo ""
-		echo -e "	Certificate:  /root/.acme.sh/${DOMAIN}_ecc/$DOMAIN.cer"
-		echo -e "	Private Key:  /root/.acme.sh/${DOMAIN}_ecc/$DOMAIN.key"
-		echo -e "	Intermediate Certificate:  /root/.acme.sh/${DOMAIN}_ecc/ca.cer"
-		echo -e "	Full Chain Certificate:  /root/.acme.sh/${DOMAIN}_ecc/fullchain.cer"
-		echo ""
-	elif [[ "$1" -eq "rsa" ]]
-	then
-		echo -e "${CGREEN}Your RSA wildcard certificate has been successfully created. You will find your files here:${CEND}"
-		echo ""
-		echo -e "	Certificate:  /root/.acme.sh/${DOMAIN}/$DOMAIN.cer"
-		echo -e "	Private Key:  /root/.acme.sh/${DOMAIN}/$DOMAIN.key"
-		echo -e "	Intermediate Certificate:  /root/.acme.sh/${DOMAIN}/ca.cer"
-		echo -e "	Full Chain Certificate:  /root/.acme.sh/${DOMAIN}/fullchain.cer"
-		echo ""
-	fi
+	case "$1" in
+        ecc)
+            echo -e "${CGREEN}Your ECC wildcard certificate has been successfully created. You will find your files here:${CEND}"
+			echo ""
+			echo -e "	Certificate:  /root/.acme.sh/${DOMAIN}_ecc/$DOMAIN.cer"
+			echo -e "	Private Key:  /root/.acme.sh/${DOMAIN}_ecc/$DOMAIN.key"
+			echo -e "	Intermediate Certificate:  /root/.acme.sh/${DOMAIN}_ecc/ca.cer"
+			echo -e "	Full Chain Certificate:  /root/.acme.sh/${DOMAIN}_ecc/fullchain.cer"
+			echo ""
+            ;;
+        rsa)
+            echo -e "${CGREEN}Your RSA wildcard certificate has been successfully created. You will find your files here:${CEND}"
+			echo ""
+			echo -e "	Certificate:  /root/.acme.sh/${DOMAIN}/$DOMAIN.cer"
+			echo -e "	Private Key:  /root/.acme.sh/${DOMAIN}/$DOMAIN.key"
+			echo -e "	Intermediate Certificate:  /root/.acme.sh/${DOMAIN}/ca.cer"
+			echo -e "	Full Chain Certificate:  /root/.acme.sh/${DOMAIN}/fullchain.cer"
+			echo ""
+            ;;
+	esac
 }
 
 function issueWildcardECC {
@@ -177,14 +178,14 @@ function issueWildcardECC {
 	echo -e "${CGREEN}Requesting ECC certificate ...${CEND}"
 	echo "The following process takes about 2+ minutes, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
 	RET=$(./acme.sh --issue --dns dns_inwx -d $DOMAIN -d *.$DOMAIN --keylength ec-384)
-	checkCertReceival ecc
+	checkCertReceival "ecc"
 }
 
 function issueWildcardRSA {
 	TYPE="rsa"
 	echo -e "${CGREEN}Requesting RSA certificate ...${CEND}"
 	RET=$(./acme.sh --issue --dns dns_inwx -d $DOMAIN -d *.$DOMAIN --keylength 4096)
-	checkCertReceival rsa
+	checkCertReceival "rsa"
 }
 
 function forceRenewal {
@@ -192,13 +193,13 @@ function forceRenewal {
 	echo -e "${CGREEN}Renewing ECC certificate ...${CEND}"
 	echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
 	RET=$(./acme.sh --renew -d $DOMAIN -d *.$DOMAIN --force --ecc)
-	checkCertReceival ecc
+	checkCertReceival "ecc"
 	if [[ -d /root/.acme.sh/$DOMAIN/ ]]
 	then
 		echo -e "${CGREEN}Renewing RSA certificate ...${CEND}"
 		echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
 		RET=$(./acme.sh --renew -d $DOMAIN -d *.$DOMAIN --force)
-		checkCertReceival rsa
+		checkCertReceival "rsa"
 	fi
 }
 ###################################################################################
