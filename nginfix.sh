@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration INWX credentials / Server IPs #####################################
-USERNAME="sclife"
-PASSWORD="C2PSv9sLbLm8skbUZq4G"
+USERNAME=""
+PASSWORD=""
 APIHOST="https://api.domrobot.com/xmlrpc/"
 IPV4=""
 IPV6=""
