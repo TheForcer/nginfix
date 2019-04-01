@@ -275,7 +275,9 @@ case $OPTION in
 		wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
 		chmod +x nginx-autoinstall.sh
 		sudo bash nginx-autoinstall.sh
-		sed -i "s/\.conf//g;" /etc/nginx/nginx.conf
+		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf -O /etc/nginx/tls.conf
+		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx.conf -O /etc/nginx/nginx.conf
+		sudo nginx -s reload
 	exit
 	;;
 
