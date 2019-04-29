@@ -15,3 +15,7 @@ chmod u+x nginfix.sh
 ```
 
 Do not forget to enter your INWX credentials & Server IPs in the config section of the script.
+
+## Credits
+
+The nginx installation feature is based on the great [nginx-autoinstall script](https://github.com/angristan/nginx-autoinstall) by angristan. Thanks a lot!
