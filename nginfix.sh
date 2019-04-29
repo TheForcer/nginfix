@@ -28,7 +28,7 @@ echo "   3) Add a new NGINX vhost/subdomain"
 echo "   4) Remove a NGINX vhost/subdomain"
 echo "   5) Install a LetsEncrypt Wildcard certificate via acme.sh"
 echo "   6) Force LetsEncrypt Wildcard certificate renewal"
-echo "   7) Install / Update / Remove NGINX"
+echo "   7) Install / Update NGINX"
 echo "   8) Add a new NGINX proxy vhost/subdomain"
 echo "   9) Exit"
 echo ""
@@ -274,6 +274,11 @@ case $OPTION in
 	7)  # nginx installer script
 		wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
 		chmod +x nginx-autoinstall.sh
+		sed -i '2a HEADLESS=y' nginx-autoinstall.sh
+		sed -i 's/NGINX_VER=${NGINX_VER:-1}/NGINX_VER=2/g' nginx-autoinstall.sh
+		sed -i 's/SSL=${SSL:-1}/SSL=2/g' nginx-autoinstall.sh
+		sed -i 's/RM_CONF=${RM_CONF:-y}/RM_CONF="n"/g' nginx-autoinstall.sh
+		sed -i 's/RM_CONF=${RM_LOGS:-y}/RM_LOGS="n"/g' nginx-autoinstall.sh
 		sudo bash nginx-autoinstall.sh
 		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf -O /etc/nginx/tls.conf
 		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx.conf -O /etc/nginx/nginx.conf
