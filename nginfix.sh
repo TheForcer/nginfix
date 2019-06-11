@@ -10,7 +10,7 @@ NGINXUSER="www-data"
 ###################################################################################
 
 # Colors ##########################################################################
-CSI="\033["
+CSI="\\033["
 CEND="${CSI}0m"
 CRED="${CSI}1;31m"
 CGREEN="${CSI}1;32m"
@@ -35,14 +35,14 @@ echo ""
 
 while [[ $OPTION !=  "1" && $OPTION !=  "2" && $OPTION !=  "3" && $OPTION !=  "4" && $OPTION !=  "5" && $OPTION !=  "6" && $OPTION !=  "7" && $OPTION !=  "8" && $OPTION !=  "9" ]]; 
 do
-	read -p "Select an option [1-9]: " OPTION
+	read -rp "Select an option [1-9]: " OPTION
 done
 ###################################################################################
 
 # General functions ###############################################################
 function domainRegex {
-	DOMAIN=$(echo $FQDN | egrep -o '([-\_0-9a-z]+\.[a-z0-9]+)$')
-	SUBDOMAIN=$(echo $FQDN | egrep -o '^[a-z0-9]+')
+	DOMAIN=$(echo "$FQDN" | grep -E -o '([-\_0-9a-z]+\.[a-z0-9]+)$')
+	SUBDOMAIN=$(echo "$FQDN" | grep -E -o '^[a-z0-9]+')
 }
 
 function rootCheck {
@@ -82,11 +82,11 @@ function deleteRecords {
 		echo -e "${CRED}Something went wrong with the domain lookup. Please double-check your credentials and the FQDN you entered.${CEND}"
 		exit 1
 	else
-		IDS=($(echo $RET | egrep -o '<name>id</name><value><int>[0-9]+' | egrep -o '[0-9]+'))
+		IDS=($(echo "$RET" | grep -E -o '<name>id</name><value><int>[0-9]+' | grep -E -o '[0-9]+'))
 		for id in ${IDS[*]}
 		do
 			echo "Deleting record $id ..."
-			XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/Scripts/master/inwx_nginx/deleteRecord.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%ID%/$id/g;")
+			XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/deleteRecord.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%ID%/$id/g;")
 			RET=$(curl  -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
 		done
 		echo -e "${CGREEN}Finished removing the INWX records. Exiting now...${CEND}"	
@@ -97,15 +97,15 @@ function createVhost {
 	# define location variables
 	ROOTDIR="/var/www/$FQDN/html"
 	CONF="/etc/nginx/sites-available/$FQDN"
-	mkdir -p $ROOTDIR
-	chown -R $NGINXUSER:$NGINXUSER $ROOTDIR
+	mkdir -p "$ROOTDIR"
+	chown -R $NGINXUSER:$NGINXUSER "$ROOTDIR"
 	# create NGINX block
-	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_default.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%ROOTDIR%!$ROOTDIR!g" > $CONF
-	ln -s $CONF /etc/nginx/sites-enabled/$FQDN
+	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_default.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%ROOTDIR%!$ROOTDIR!g" > "$CONF"
+	ln -s "$CONF" /etc/nginx/sites-enabled/"$FQDN"
 	if ! nginx -t
 	then
 		echo -e "${CRED}Something is wrong with the NGINX configuration. Please double-check your config in /etc/nginx.${CEND}"
-		rm -rf /var/www/$FQDN && rm -f $CONF $$ rm -f /etc/nginx/sites-enabled/$FQDN
+		rm -rf /var/www/"$FQDN" && rm -f "$CONF" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 		exit 1
 	else
 		nginx -s reload
@@ -115,19 +115,19 @@ function createVhost {
 }
 
 function deleteVhost {
-	rm -rf /var/www/$FQDN && rm -f /etc/nginx/sites-available/$FQDN $$ rm -f /etc/nginx/sites-enabled/$FQDN
+	rm -rf /var/www/"$FQDN" && rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 	nginx -s reload
 	echo -e "${CGREEN}Finished removing the subdomain. Exiting...${CEND}"
 }
 
 function createProxyVhost {
 	CONF="/etc/nginx/sites-available/$FQDN"
-	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_proxy.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%PORT%!$PORT!g;s!%APPNAME%!$APPNAME!g" > $CONF
-	ln -s $CONF /etc/nginx/sites-enabled/$FQDN
+	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_proxy.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%PORT%!$PORT!g;s!%APPNAME%!$APPNAME!g" > "$CONF"
+	ln -s "$CONF" /etc/nginx/sites-enabled/"$FQDN"
 	if ! nginx -t
 	then
 		echo -e "${CRED}Something is wrong with the NGINX configuration. Please double-check your config in /etc/nginx.${CEND}"
-		rm -f $CONF $$ rm -f /etc/nginx/sites-enabled/$FQDN
+		rm -f "$CONF" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 		exit 1
 	else
 		nginx -s reload
@@ -137,11 +137,11 @@ function createProxyVhost {
 
 function installAcme {
 	# download & install acme.sh
-	cd /root/
+	cd /root/ || exit
 	echo -e "${CGREEN}Downloading acme.sh ...${CEND}"
 	(git clone https://github.com/Neilpang/acme.sh.git) 2> /dev/null
 	echo -e "${CGREEN}Installing acme.sh ...${CEND}"
-	cd ./acme.sh 
+	cd ./acme.sh || exit
 	(./acme.sh --install) 2> /dev/null
 }
 
@@ -174,31 +174,31 @@ function checkCertReceival {
 }
 
 function issueWildcardECC {
-	TYPE="ecc"
+	#TYPE="ecc"
 	echo -e "${CGREEN}Requesting ECC certificate ...${CEND}"
 	echo "The following process takes about 2+ minutes, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
-	RET=$(./acme.sh --issue --dns dns_inwx -d $DOMAIN -d *.$DOMAIN --keylength ec-384)
+	RET=$(./acme.sh --issue --dns dns_inwx -d "$DOMAIN" -d "*.$DOMAIN" --keylength ec-384)
 	checkCertReceival "ecc"
 }
 
 function issueWildcardRSA {
-	TYPE="rsa"
+	#TYPE="rsa"
 	echo -e "${CGREEN}Requesting RSA certificate ...${CEND}"
-	RET=$(./acme.sh --issue --dns dns_inwx -d $DOMAIN -d *.$DOMAIN --keylength 4096)
+	RET=$(./acme.sh --issue --dns dns_inwx -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096)
 	checkCertReceival "rsa"
 }
 
 function forceRenewal {
-	cd /root/.acme.sh
+	cd /root/.acme.sh || exit
 	echo -e "${CGREEN}Renewing ECC certificate ...${CEND}"
 	echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
-	RET=$(./acme.sh --renew -d $DOMAIN -d *.$DOMAIN --force --ecc)
+	RET=$(./acme.sh --renew -d "$DOMAIN" -d "*.$DOMAIN" --force --ecc)
 	checkCertReceival "ecc"
 	if [[ -d /root/.acme.sh/$DOMAIN/ ]]
 	then
 		echo -e "${CGREEN}Renewing RSA certificate ...${CEND}"
 		echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
-		RET=$(./acme.sh --renew -d $DOMAIN -d *.$DOMAIN --force)
+		RET=$(./acme.sh --renew -d "$DOMAIN" -d "*.$DOMAIN" --force)
 		checkCertReceival "rsa"
 	fi
 }
@@ -207,14 +207,14 @@ function forceRenewal {
 # Switch case #####################################################################
 case $OPTION in
 	1)  # add INWX subdomain
-		read -p "Please enter the new complete FQDN (eg. test.example.com): " FQDN
+		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
 		domainRegex
 		createRecords
 	exit
     ;;
 
 	2)  # remove INWX subdomain
-		read -p "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
+		read -rp "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
 		domainRegex
 		deleteRecords
 	exit
@@ -227,7 +227,7 @@ case $OPTION in
 			echo -e "${CRED}It seems that you do not have the acme.sh client installed. Please complete step 5 in the script first.${CEND}"
 			exit 1
 		fi
-		read -p "Please enter the new complete FQDN (eg. test.example.com): " FQDN
+		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
 		domainRegex
 		createVhost
 	exit
@@ -236,8 +236,8 @@ case $OPTION in
 	4)  # remove vhost
 		rootCheck
 		echo -e "${CRED}WARNING: This will delete the NGINX config files as well as the content of the FQDN's root directory.${CEND}"
-		read -p "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
-		read -p "Please enter the FQDN again: " FQDN2
+		read -rp "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
+		read -rp "Please enter the FQDN again: " FQDN2
 		if [[ "$FQDN" == "$FQDN2" ]]
 		then
 			deleteVhost
@@ -251,12 +251,12 @@ case $OPTION in
 
 	5)  # install acme.sh
 		rootCheck
-		read -p "Please enter the domain you want to issue the wildcard certificate to (eg. example.com): " DOMAIN
+		read -rp "Please enter the domain you want to issue the wildcard certificate to (eg. example.com): " DOMAIN
 		# define INWX credentials for acme.sh
 		export INWX_User=$USERNAME && export INWX_Password=$PASSWORD
 		installAcme
 		issueWildcardECC
-		read -p "Do you want to install a RSA wildcard certificate as well? [y/n] " REPLY
+		read -rp "Do you want to install a RSA wildcard certificate as well? [y/n] " REPLY
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
 			issueWildcardRSA
@@ -266,23 +266,28 @@ case $OPTION in
 	
 	6)  # force certificate renewal
 		rootCheck
-		read -p "Please enter the domain of the certificate you want to renew (eg. example.com): " DOMAIN
+		read -rp "Please enter the domain of the certificate you want to renew (eg. example.com): " DOMAIN
 		forceRenewal
 	exit
 	;;	
 	
 	7)  # nginx installer script
-		wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
-		chmod +x nginx-autoinstall.sh
-		sed -i '2a HEADLESS=y' nginx-autoinstall.sh
-		sed -i 's/NGINX_VER=${NGINX_VER:-1}/NGINX_VER=2/g' nginx-autoinstall.sh
-		sed -i 's/SSL=${SSL:-1}/SSL=2/g' nginx-autoinstall.sh
-		sed -i 's/RM_CONF=${RM_CONF:-y}/RM_CONF="n"/g' nginx-autoinstall.sh
-		sed -i 's/RM_CONF=${RM_LOGS:-y}/RM_LOGS="n"/g' nginx-autoinstall.sh
-		sudo bash nginx-autoinstall.sh
-		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf -O /etc/nginx/tls.conf
-		sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx.conf -O /etc/nginx/nginx.conf
-		sudo nginx -s reload
+		rootCheck
+		read -rp "Do you want to automatically install nginx with my preferred settings? [y/n] " REPLY
+		if [[ $REPLY =~ ^[Yy]$ ]]
+		then
+			wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
+			chmod +x nginx-autoinstall.sh
+			sed -i "2a HEADLESS=y" nginx-autoinstall.sh
+			sed -i "s/NGINX_VER=\${NGINX_VER:-1}/NGINX_VER=2/g" nginx-autoinstall.sh
+			sed -i "s/SSL=\${SSL:-1}/SSL=2/g" nginx-autoinstall.sh
+			sed -i "s/RM_CONF=\${RM_CONF:-y}/RM_CONF=\"n\"/g" nginx-autoinstall.sh
+			sed -i "s/RM_CONF=\${RM_LOGS:-y}/RM_LOGS=\"n\"/g" nginx-autoinstall.sh
+			sudo bash nginx-autoinstall.sh
+			sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf -O /etc/nginx/tls.conf
+			sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx.conf -O /etc/nginx/nginx.conf
+			sudo nginx -s reload
+		fi
 	exit
 	;;
 
@@ -293,9 +298,9 @@ case $OPTION in
 			echo -e "${CRED}It seems that you do not have the acme.sh client installed. Please complete step 5 in the script first.${CEND}"
 			exit 1
 		fi
-		read -p "Please enter the new complete FQDN (eg. test.example.com): " FQDN
-		read -p "On which port is the application listening? (eg. 8080): " PORT
-		read -p "What is the name of the application (for nginx logs): " APPNAME
+		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
+		read -rp "On which port is the application listening? (eg. 8080): " PORT
+		read -rp "What is the name of the application (for nginx logs): " APPNAME
 		domainRegex
 		createProxyVhost
 	exit
