@@ -176,29 +176,29 @@ function checkCertReceival {
 function issueWildcardECC {
 	#TYPE="ecc"
 	echo -e "${CGREEN}Requesting ECC certificate ...${CEND}"
-	echo "The following process takes about 2+ minutes, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
-	RET=$(./acme.sh --issue --dns dns_inwx -d "$DOMAIN" -d "*.$DOMAIN" --keylength ec-384)
+	echo "The following process takes about 30 seconds, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
+	RET=$(./acme.sh --issue --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength ec-384 --ocsp)
 	checkCertReceival "ecc"
 }
 
 function issueWildcardRSA {
 	#TYPE="rsa"
 	echo -e "${CGREEN}Requesting RSA certificate ...${CEND}"
-	RET=$(./acme.sh --issue --dns dns_inwx -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096)
+	RET=$(./acme.sh --issue --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096 --ocsp)
 	checkCertReceival "rsa"
 }
 
 function forceRenewal {
 	cd /root/.acme.sh || exit
 	echo -e "${CGREEN}Renewing ECC certificate ...${CEND}"
-	echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
-	RET=$(./acme.sh --renew -d "$DOMAIN" -d "*.$DOMAIN" --force --ecc)
+	echo "The following process can take about 30 seconds, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
+	RET=$(./acme.sh --renew --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --force --ecc)
 	checkCertReceival "ecc"
 	if [[ -d /root/.acme.sh/$DOMAIN/ ]]
 	then
 		echo -e "${CGREEN}Renewing RSA certificate ...${CEND}"
-		echo "The following process can take about 2+ minutes, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
-		RET=$(./acme.sh --renew -d "$DOMAIN" -d "*.$DOMAIN" --force)
+		echo "The following process can take about 30 seconds, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
+		RET=$(./acme.sh --renew --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --force)
 		checkCertReceival "rsa"
 	fi
 }
