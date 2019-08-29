@@ -229,9 +229,18 @@ case $OPTION in
 			echo -e "${CRED}It seems that you do not have the acme.sh client installed. Please complete step 5 in the script first.${CEND}"
 			exit 1
 		fi
+		read -rp "Do you want to create a vhost that proxies to another service/port? [y/n] " REPLY_PROXY
 		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
-		domainRegex
-		createVhost
+		if [[ $REPLY_PROXY =~ ^[Yy]$ ]]
+		then
+			read -rp "On which port is the application listening? (eg. 8080): " PORT
+			read -rp "What is the name of the application (for nginx logs): " APPNAME
+			domainRegex
+			createProxyVhost
+		else
+			domainRegex
+			createVhost
+		fi
 	exit
 	;;
 
