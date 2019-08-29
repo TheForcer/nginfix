@@ -143,6 +143,8 @@ function installAcme {
 	echo -e "${CGREEN}Installing acme.sh ...${CEND}"
 	cd ./acme.sh || exit
 	(./acme.sh --install) 2> /dev/null
+	echo -e "${CGREEN}Setting up automatic updates for acme.sh ...${CEND}"
+	(./acme.sh --upgrade --auto-upgrade) 2> /dev/null
 }
 
 function checkCertReceival {
