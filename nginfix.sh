@@ -29,11 +29,10 @@ echo "   4) Remove a NGINX vhost/subdomain"
 echo "   5) Install a LetsEncrypt Wildcard certificate via acme.sh"
 echo "   6) Force LetsEncrypt Wildcard certificate renewal"
 echo "   7) Install / Update NGINX"
-echo "   8) Add a new NGINX proxy vhost/subdomain"
 echo "   9) Exit"
 echo ""
 
-while [[ $OPTION !=  "1" && $OPTION !=  "2" && $OPTION !=  "3" && $OPTION !=  "4" && $OPTION !=  "5" && $OPTION !=  "6" && $OPTION !=  "7" && $OPTION !=  "8" && $OPTION !=  "9" ]]; 
+while [[ $OPTION !=  "1" && $OPTION !=  "2" && $OPTION !=  "3" && $OPTION !=  "4" && $OPTION !=  "5" && $OPTION !=  "6" && $OPTION !=  "7" && $OPTION !=  "9" ]]; 
 do
 	read -rp "Select an option [1-9]: " OPTION
 done
@@ -115,7 +114,12 @@ function createVhost {
 }
 
 function deleteVhost {
-	rm -rf /var/www/"$FQDN" && rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
+	if ! grep -q "proxy_pass" /etc/nginx/sites-available/"$FQDN"
+	then
+		rm -rf /var/www/"$FQDN" && rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
+	else
+		rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
+	fi
 	nginx -s reload
 	echo -e "${CGREEN}Finished removing the subdomain. Exiting...${CEND}"
 }
@@ -246,7 +250,7 @@ case $OPTION in
 
 	4)  # remove vhost
 		rootCheck
-		echo -e "${CRED}WARNING: This will delete the NGINX config files as well as the content of the FQDN's root directory.${CEND}"
+		echo -e "${CRED}WARNING: This will delete the NGINX config files as well as the content of the FQDN's root directory, if one exists.${CEND}"
 		read -rp "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
 		read -rp "Please enter the FQDN again: " FQDN2
 		if [[ "$FQDN" == "$FQDN2" ]]
@@ -301,21 +305,6 @@ case $OPTION in
 		fi
 	exit
 	;;
-
-	8)  # add proxy vhost
-		rootCheck
-		if ! [[ -d /root/.acme.sh/ ]]
-		then
-			echo -e "${CRED}It seems that you do not have the acme.sh client installed. Please complete step 5 in the script first.${CEND}"
-			exit 1
-		fi
-		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
-		read -rp "On which port is the application listening? (eg. 8080): " PORT
-		read -rp "What is the name of the application (for nginx logs): " APPNAME
-		domainRegex
-		createProxyVhost
-	exit
-	;;	
 	
 	9)
 		clear
