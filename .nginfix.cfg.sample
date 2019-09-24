@@ -1,0 +1,8 @@
+# Configuration INWX credentials / Server IPs #####################################
+USERNAME=""
+PASSWORD=""
+APIHOST="https://api.domrobot.com/xmlrpc/"
+IPV4=""
+IPV6=""
+NGINXUSER="www-data"
+###################################################################################

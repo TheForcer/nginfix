@@ -1,19 +1,28 @@
 #!/bin/bash
 
-# Configuration INWX credentials / Server IPs #####################################
-USERNAME=""
-PASSWORD=""
-APIHOST="https://api.domrobot.com/xmlrpc/"
-IPV4=""
-IPV6=""
-NGINXUSER="www-data"
-###################################################################################
-
 # Colors ##########################################################################
 CSI="\\033["
 CEND="${CSI}0m"
 CRED="${CSI}1;31m"
 CGREEN="${CSI}1;32m"
+###################################################################################
+
+# Check for config file ###########################################################
+if [ -f "./.nginfix.cfg" ]; then
+	source ./.nginfix.cfg
+else
+	clear
+	echo "No config file found."
+	read -rp "Do you want to download a sample config file? [y/n] " REPLY_CONFIG
+	if [[ $REPLY_CONFIG =~ ^[Yy]$ ]]; then
+		wget https://raw.githubusercontent.com/TheForcer/nginfix/master/.nginfix.cfg.sample
+		echo "Please edit the just downloaded .nginfix.cfg.sample file and fill in your details."
+		echo "Rename/move the file to .nginfix.cfg afterwards, so that it can be used."
+		exit 1
+	else
+		exit 1
+	fi
+fi
 ###################################################################################
 
 # Menu ############################################################################

@@ -14,7 +14,7 @@ chmod u+x nginfix.sh
 ./nginfix.sh
 ```
 
-Do not forget to enter your INWX credentials & Server IPs in the config section of the script.
+On the first launch you'll have the possibility to download a [sample config file](https://raw.githubusercontent.com/TheForcer/nginfix/master/.nginfix.cfg.sample). Open that file with your preferred editor and fill in your details (INWX credentials, IPS, etc.) and save the file as .nginfix.cfg in the same directory as the script. After doing so, you will be able to fully utilize the script!
 
 ## Credits
 
