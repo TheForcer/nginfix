@@ -22,10 +22,10 @@ echo ""
 echo -e "${CGREEN}Welcome to nginfix! (INWX version)${CEND}"
 echo ""
 echo "What do you want to do?"
-echo "   1) Add a new subdomain to INWX"
-echo "   2) Remove a subdomain from INWX"
-echo "   3) Add a new NGINX vhost/subdomain"
-echo "   4) Remove a NGINX vhost/subdomain"
+echo "   1) Add a new A+AAAA record to INWX"
+echo "   2) Remove a A+AAAA record from INWX"
+echo "   3) Add a new NGINX virtual host"
+echo "   4) Remove a NGINX virtual host"
 echo "   5) Install a LetsEncrypt Wildcard certificate via acme.sh"
 echo "   6) Force LetsEncrypt Wildcard certificate renewal"
 echo "   7) Install / Update NGINX"
@@ -39,9 +39,22 @@ done
 ###################################################################################
 
 # General functions ###############################################################
+function domainCheck {
+	if [[ ! "$FQDN" =~ (^[A-Za-z0-9._%+-]*\.*[A-Za-z0-9.-]+\.[A-Za-z]{2,10}$) ]]
+	then
+		FQDNVALID=false
+	else
+		FQDNVALID=true
+	fi
+}
+
 function domainRegex {
 	DOMAIN=$(echo "$FQDN" | grep -E -o '([-\_0-9a-z]+\.[a-z0-9]+)$')
-	SUBDOMAIN=$(echo "$FQDN" | grep -E -o '^[a-z0-9]+')
+	SUBDOMAIN=$(echo "$FQDN" | sed -e "s/.$DOMAIN//")
+	if [[ "$DOMAIN" = "$SUBDOMAIN" ]]
+	then
+		SUBDOMAIN=""
+	fi
 }
 
 function rootCheck {
@@ -74,14 +87,14 @@ function createRecords {
 
 function deleteRecords {
 	XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/getInfo.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%DOMAIN%/$DOMAIN/g;s/%SUBDOMAIN%/$SUBDOMAIN/g;")
-	RET=$(curl  -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
-	# check success of domain lookup
+	RET=$(curl -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
+	#check success of domain lookup
 	if ! grep -q "Command completed successfully" <<< "$RET";
 	then
 		echo -e "${CRED}Something went wrong with the domain lookup. Please double-check your credentials and the FQDN you entered.${CEND}"
 		exit 1
 	else
-		IDS=($(echo "$RET" | grep -E -o '<name>id</name><value><int>[0-9]+' | grep -E -o '[0-9]+'))
+		IDS=($(echo "$RET" | grep -E -o '<int>[0-9]+<\/int><\/value><\/member><member><name>name<\/name><value><string>[A-Za-z.-]*<\/string><\/value><\/member><member><name>type<\/name><value><string>(A|AAAA)<\/string>' | grep -E -o '[0-9]+'))
 		for id in ${IDS[*]}
 		do
 			echo "Deleting record $id ..."
@@ -213,14 +226,22 @@ function forceRenewal {
 # Switch case #####################################################################
 case $OPTION in
 	1)  # add INWX subdomain
-		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the FQDN of the new record (eg. example.com, sub.example.com): " FQDN
+			domainCheck
+		done
 		domainRegex
 		createRecords
 	exit
     ;;
 
 	2)  # remove INWX subdomain
-		read -rp "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the FQDN of the record you want to remove (eg. example.com, sub.example.com): " FQDN
+			domainCheck
+		done
 		domainRegex
 		deleteRecords
 	exit
