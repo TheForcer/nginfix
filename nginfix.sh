@@ -333,19 +333,14 @@ case $OPTION in
 	
 	7)  # nginx installer script
 		rootCheck
-		read -rp "Do you want to automatically install nginx with my preferred settings? [y/n] " REPLY
+		read -rp "Do you want to download the current version of my nginx-autoinstall script? [y/n] " REPLY
 		if [[ $REPLY =~ ^[Yy]$ ]]; then
-			wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
-			chmod +x nginx-autoinstall.sh
-			sed -i "2a HEADLESS=y" nginx-autoinstall.sh
-			sed -i "s/NGINX_VER=\${NGINX_VER:-1}/NGINX_VER=2/g" nginx-autoinstall.sh
-			sed -i "s/SSL=\${SSL:-1}/SSL=2/g" nginx-autoinstall.sh
-			sed -i "s/RM_CONF=\${RM_CONF:-y}/RM_CONF=\"n\"/g" nginx-autoinstall.sh
-			sed -i "s/RM_CONF=\${RM_LOGS:-y}/RM_LOGS=\"n\"/g" nginx-autoinstall.sh
-			sudo bash nginx-autoinstall.sh
-			sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf -O /etc/nginx/tls.conf
-			sudo wget -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx.conf -O /etc/nginx/nginx.conf
-			sudo nginx -s reload
+			wget -N https://raw.githubusercontent.com/TheForcer/nginx-autoinstall/master/nginx-autoinstall.sh
+			chmod u+x nginx-autoinstall.sh
+			./nginx-autoinstall.sh
+		fi
+		if [[ -f "./.nginx-autoinstall.sh" ]]; then
+			./nginx-autoinstall.sh
 		fi
 	exit
 	;;
