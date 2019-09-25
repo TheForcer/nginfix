@@ -49,8 +49,8 @@ done
 
 # General functions ###############################################################
 function domainCheck {
-	if [[ ! "$FQDN" =~ (^[A-Za-z0-9._%+-]*\.*[A-Za-z0-9.-]+\.[A-Za-z]{2,10}$) ]]
-	then
+	# Check if input is a domain/subdomain and set variable accordingly
+	if [[ ! "$FQDN" =~ (^[A-Za-z0-9._%+-]*\.*[A-Za-z0-9.-]+\.[A-Za-z]{2,10}$) ]]; then
 		FQDNVALID=false
 	else
 		FQDNVALID=true
@@ -58,36 +58,35 @@ function domainCheck {
 }
 
 function domainRegex {
+	# Separate input into subdomain and domain. Subdomain is empty if domain only
 	DOMAIN=$(echo "$FQDN" | grep -E -o '([-\_0-9a-z]+\.[a-z0-9]+)$')
 	SUBDOMAIN=$(echo "$FQDN" | sed -e "s/.$DOMAIN//")
-	if [[ "$DOMAIN" = "$SUBDOMAIN" ]]
-	then
+	if [[ "$DOMAIN" = "$SUBDOMAIN" ]]; then
 		SUBDOMAIN=""
 	fi
 }
 
 function rootCheck {
-	if [[ "$EUID" -ne 0 ]] 
-	then
+	# Check if script is run as root user
+	if [[ "$EUID" -ne 0 ]] ; then
 		echo -e "${CRED}Sorry, for this module you need to run the script as root/sudo${CEND}"
 		exit 1
 	fi
 }
 
 function createRecords {
+	# API call to INWX to create A/AAAA records
 	XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/createA.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%DOMAIN%/$DOMAIN/g;s/%SUBDOMAIN%/$SUBDOMAIN/g;s/%IPV4%/$IPV4/g;")
-	RET=$(curl  -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
+	RET=$(curl -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
 	# check success of record creation
-	if ! grep -q "Command completed successfully" <<< "$RET";
-	then
+	if ! grep -q "Command completed successfully" <<< "$RET"; then
 		echo -e "${CRED}Something went wrong with the record creation. Please double-check your credentials and the FQDN you entered.${CEND}"
 		exit 1
 	else
 		echo "Your new A record has been successfully created. Creating AAAA record now..."
 		XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/createAAAA.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%DOMAIN%/$DOMAIN/g;s/%SUBDOMAIN%/$SUBDOMAIN/g;s/%IPV6%/$IPV6/g;")
-		RET=$(curl  -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
-		if grep -q "Command completed successfully" <<< "$RET";
-		then
+		RET=$(curl -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
+		if grep -q "Command completed successfully" <<< "$RET"; then
 			echo -e "${CGREEN}Finished creating the DNS records! Exiting now...${CEND}"
 		exit
 		fi
@@ -95,11 +94,11 @@ function createRecords {
 }
 
 function deleteRecords {
+	# API call to INWX to delete A/AAAA records
 	XMLDATA=$(curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/getInfo.api | sed "s/%PASSWD%/$PASSWORD/g;s/%USER%/$USERNAME/g;s/%DOMAIN%/$DOMAIN/g;s/%SUBDOMAIN%/$SUBDOMAIN/g;")
 	RET=$(curl -s -X POST -d "$XMLDATA" "$APIHOST" --header "Content-Type:text/xml")
 	#check success of domain lookup
-	if ! grep -q "Command completed successfully" <<< "$RET";
-	then
+	if ! grep -q "Command completed successfully" <<< "$RET"; then
 		echo -e "${CRED}Something went wrong with the domain lookup. Please double-check your credentials and the FQDN you entered.${CEND}"
 		exit 1
 	else
@@ -115,6 +114,7 @@ function deleteRecords {
 }
 
 function createVhost {
+	# Create new nginx virtual host config + required directories
 	# define location variables
 	ROOTDIR="/var/www/$FQDN/html"
 	CONF="/etc/nginx/sites-available/$FQDN"
@@ -123,8 +123,7 @@ function createVhost {
 	# create NGINX block
 	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_default.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%ROOTDIR%!$ROOTDIR!g" > "$CONF"
 	ln -s "$CONF" /etc/nginx/sites-enabled/"$FQDN"
-	if ! nginx -t
-	then
+	if ! nginx -t; then
 		echo -e "${CRED}Something is wrong with the NGINX configuration. Please double-check your config in /etc/nginx.${CEND}"
 		rm -rf /var/www/"$FQDN" && rm -f "$CONF" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 		exit 1
@@ -136,8 +135,8 @@ function createVhost {
 }
 
 function deleteVhost {
-	if ! grep -q "proxy_pass" /etc/nginx/sites-available/"$FQDN"
-	then
+	# Delete existing nginx virtual host config + related directories
+	if ! grep -q "proxy_pass" /etc/nginx/sites-available/"$FQDN"; then
 		rm -rf /var/www/"$FQDN" && rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 	else
 		rm -f /etc/nginx/sites-available/"$FQDN" && rm -f /etc/nginx/sites-enabled/"$FQDN"
@@ -147,11 +146,11 @@ function deleteVhost {
 }
 
 function createProxyVhost {
+	# Create a new proxy nginx virtual host config
 	CONF="/etc/nginx/sites-available/$FQDN"
 	curl -s -N https://raw.githubusercontent.com/TheForcer/nginfix/master/nginx_proxy.conf | sed "s/%FQDN%/$FQDN/g;s/%DOMAIN%/$DOMAIN/g;s!%PORT%!$PORT!g;s!%APPNAME%!$APPNAME!g" > "$CONF"
 	ln -s "$CONF" /etc/nginx/sites-enabled/"$FQDN"
-	if ! nginx -t
-	then
+	if ! nginx -t; then
 		echo -e "${CRED}Something is wrong with the NGINX configuration. Please double-check your config in /etc/nginx.${CEND}"
 		rm -f "$CONF" && rm -f /etc/nginx/sites-enabled/"$FQDN"
 		exit 1
@@ -162,7 +161,7 @@ function createProxyVhost {
 }
 
 function installAcme {
-	# download & install acme.sh
+	# download & install acme.sh and enable automatic upgrades
 	cd /root/ || exit
 	echo -e "${CGREEN}Downloading acme.sh ...${CEND}"
 	(git clone https://github.com/Neilpang/acme.sh.git) 2> /dev/null
@@ -170,12 +169,12 @@ function installAcme {
 	cd ./acme.sh || exit
 	(./acme.sh --install) 2> /dev/null
 	echo -e "${CGREEN}Setting up automatic updates for acme.sh ...${CEND}"
-	(./acme.sh --upgrade --auto-upgrade) 2> /dev/null
+	(./acme.sh --upgrade --auto-upgrade --force) 2> /dev/null
 }
 
 function checkCertReceival {
-	if ! grep -q "Cert success." <<< "$RET";
-	then
+	# Check if certifcates were requested successfully
+	if ! grep -q "Cert success." <<< "$RET"; then
 		echo -e "${CRED}Something went wrong with the certificate creation. Please double-check your credentials and the domain you entered.${CEND}"
 		exit 1
 	fi
@@ -202,6 +201,7 @@ function checkCertReceival {
 }
 
 function issueWildcardECC {
+	# Issue a Wildcard ECC certificate via acme.sh
 	#TYPE="ecc"
 	echo -e "${CGREEN}Requesting ECC certificate ...${CEND}"
 	echo "The following process takes about 30 seconds, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
@@ -210,6 +210,7 @@ function issueWildcardECC {
 }
 
 function issueWildcardRSA {
+	# Issue a Wildcard RSA certificate via acme.sh
 	#TYPE="rsa"
 	echo -e "${CGREEN}Requesting RSA certificate ...${CEND}"
 	RET=$(./acme.sh --issue --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096 --ocsp)
@@ -217,13 +218,13 @@ function issueWildcardRSA {
 }
 
 function forceRenewal {
+	# Force acme.sh to renew existing RSA/ECC certificates
 	cd /root/.acme.sh || exit
 	echo -e "${CGREEN}Renewing ECC certificate ...${CEND}"
 	echo "The following process can take about 30 seconds, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
 	RET=$(./acme.sh --renew --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --force --ecc)
 	checkCertReceival "ecc"
-	if [[ -d /root/.acme.sh/$DOMAIN/ ]]
-	then
+	if [[ -d /root/.acme.sh/$DOMAIN/ ]]; then
 		echo -e "${CGREEN}Renewing RSA certificate ...${CEND}"
 		echo "The following process can take about 30 seconds, as acme.sh has to wait before verifying the newly created domain entries. Please stand by..."
 		RET=$(./acme.sh --renew --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --force)
@@ -256,17 +257,20 @@ case $OPTION in
 	exit
 	;;
 
-	3)  # add vhost
+	3)  # add virtual host
 		rootCheck
 		if ! [[ -d /root/.acme.sh/ ]] 
 		then
 			echo -e "${CRED}It seems that you do not have the acme.sh client installed. Please complete step 5 in the script first.${CEND}"
 			exit 1
 		fi
-		read -rp "Do you want to create a vhost that proxies to another service/port? [y/n] " REPLY_PROXY
-		read -rp "Please enter the new complete FQDN (eg. test.example.com): " FQDN
-		if [[ $REPLY_PROXY =~ ^[Yy]$ ]]
-		then
+		read -rp "Do you want to create a virtual host that proxies to another service/port? [y/n] " REPLY_PROXY
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the new complete FQDN (eg. example.com, sub.example.com): " FQDN
+			domainCheck
+		done
+		if [[ $REPLY_PROXY =~ ^[Yy]$ ]]; then
 			read -rp "On which port is the application listening? (eg. 8080): " PORT
 			read -rp "What is the name of the application (for nginx logs): " APPNAME
 			domainRegex
@@ -278,32 +282,38 @@ case $OPTION in
 	exit
 	;;
 
-	4)  # remove vhost
+	4)  # remove virtual host
 		rootCheck
-		echo -e "${CRED}WARNING: This will delete the NGINX config files as well as the content of the FQDN's root directory, if one exists.${CEND}"
-		read -rp "Please enter the FQDN you want to remove (eg. test.example.com): " FQDN
+		echo -e "${CRED}WARNING: This will delete the NGINX config file as well as the content of the FQDN's root directory, if one exists.${CEND}"
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the FQDN you want to remove (eg. example.com, sub.example.com): " FQDN
+			domainCheck
+		done
 		read -rp "Please enter the FQDN again: " FQDN2
-		if [[ "$FQDN" == "$FQDN2" ]]
-		then
+		if [[ "$FQDN" == "$FQDN2" ]]; then
 			deleteVhost
 		else
 			echo -e "${CRED}It seems you misstyped one of the domains. Please try again.${CEND}"
 			exit 1
 		fi
-
 	exit
 	;;
 
 	5)  # install acme.sh
 		rootCheck
-		read -rp "Please enter the domain you want to issue the wildcard certificate to (eg. example.com): " DOMAIN
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the domain you want to issue the wildcard certificate to (eg. example.com): " FQDN
+			domainCheck
+			domainRegex
+		done
 		# define INWX credentials for acme.sh
 		export INWX_User=$USERNAME && export INWX_Password=$PASSWORD
 		installAcme
 		issueWildcardECC
 		read -rp "Do you want to install a RSA wildcard certificate as well? [y/n] " REPLY
-		if [[ $REPLY =~ ^[Yy]$ ]]
-		then
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
 			issueWildcardRSA
 		fi
 	exit
@@ -311,7 +321,12 @@ case $OPTION in
 	
 	6)  # force certificate renewal
 		rootCheck
-		read -rp "Please enter the domain of the certificate you want to renew (eg. example.com): " DOMAIN
+		while [[ $FQDNVALID == false ]] || [[ -z "$FQDNVALID" ]];
+		do
+			read -rp "Please enter the domain of the certificate you want to renew (eg. example.com): " FQDN
+			domainCheck
+			domainRegex
+		done
 		forceRenewal
 	exit
 	;;	
@@ -319,8 +334,7 @@ case $OPTION in
 	7)  # nginx installer script
 		rootCheck
 		read -rp "Do you want to automatically install nginx with my preferred settings? [y/n] " REPLY
-		if [[ $REPLY =~ ^[Yy]$ ]]
-		then
+		if [[ $REPLY =~ ^[Yy]$ ]]; then
 			wget -N https://raw.githubusercontent.com/Angristan/nginx-autoinstall/master/nginx-autoinstall.sh
 			chmod +x nginx-autoinstall.sh
 			sed -i "2a HEADLESS=y" nginx-autoinstall.sh

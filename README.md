@@ -16,6 +16,10 @@ chmod u+x nginfix.sh
 
 On the first launch you'll have the possibility to download a [sample config file](https://raw.githubusercontent.com/TheForcer/nginfix/master/.nginfix.cfg.sample). Open that file with your preferred editor and fill in your details (INWX credentials, IPS, etc.) and save the file as .nginfix.cfg in the same directory as the script. After doing so, you will be able to fully utilize the script!
 
+## Warning
+
+Some words of advice: I assume that you have a general understanding on how nginx works and some of the security-related headers I use in my [tls.conf](https://raw.githubusercontent.com/TheForcer/nginfix/master/tls.conf). Any browser/user who caches the Strict-Transport-Security Header will only be able to visit your domain & subdomains via HTTPS, so you should make sure plain HTTP services are not required for that domain. If you are already in the [HSTS preload list](https://hstspreload.org/), then this shouldn't be an issue for you.
+
 ## Credits
 
 The nginx installation feature is based on the great [nginx-autoinstall script](https://github.com/angristan/nginx-autoinstall) by angristan. Thanks a lot!
