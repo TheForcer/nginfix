@@ -337,6 +337,7 @@ case $OPTION in
 		if [[ $REPLY =~ ^[Yy]$ ]]; then
 			wget -N https://raw.githubusercontent.com/TheForcer/nginx-autoinstall/master/nginx-autoinstall.sh
 			chmod u+x nginx-autoinstall.sh
+			clear
 			./nginx-autoinstall.sh
 		fi
 		if [[ -f "./.nginx-autoinstall.sh" ]]; then
