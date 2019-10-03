@@ -12,6 +12,7 @@ Download and execute the nginfix.sh script (you only need the script itself, non
 
 ```sh
 wget https://raw.githubusercontent.com/TheForcer/nginfix/master/nginfix.sh
+(sha256sum nginfix.sh) // Verify below
 chmod u+x nginfix.sh
 ./nginfix.sh
 ```
