@@ -205,7 +205,7 @@ function issueWildcardECC {
 	#TYPE="ecc"
 	echo -e "${CGREEN}Requesting ECC certificate ...${CEND}"
 	echo "The following process takes about 30 seconds, as acme.sh has to wait before verifying the created domain entries. Please stand by..."
-	RET=$(./acme.sh --issue --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength ec-256 --ocsp)
+	RET=$(./acme.sh --issue --server letsencrypt --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength ec-256 --ocsp)
 	checkCertReceival "ecc"
 }
 
@@ -213,7 +213,7 @@ function issueWildcardRSA {
 	# Issue a Wildcard RSA certificate via acme.sh
 	#TYPE="rsa"
 	echo -e "${CGREEN}Requesting RSA certificate ...${CEND}"
-	RET=$(./acme.sh --issue --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096 --ocsp)
+	RET=$(./acme.sh --issue --server letsencrypt --dns dns_inwx --dnssleep 30 -d "$DOMAIN" -d "*.$DOMAIN" --keylength 4096 --ocsp)
 	checkCertReceival "rsa"
 }
 
