@@ -170,6 +170,8 @@ function installAcme {
 	(./acme.sh --install) 2> /dev/null
 	echo -e "${CGREEN}Setting up automatic updates for acme.sh ...${CEND}"
 	(./acme.sh --upgrade --auto-upgrade --force) 2> /dev/null
+	echo -e "${CGREEN}Set LetsEncrypt as default CA ...${CEND}"
+	(./acme.sh --set-default-ca --server letsencrypt) 2> /dev/null
 }
 
 function checkCertReceival {
