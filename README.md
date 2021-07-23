@@ -21,7 +21,7 @@ On the first launch you'll have the possibility to download a [sample config fil
 
 Current SHA256 hash of the script in branch master:
 ```sh
-8854ad0349f59f6e31dd192c73132f05198c6f782ac8ed7db87038e5cb7ff4b9  nginfix.sh
+7b14c463fdd22fc7d2b4f5c81139ac5f0967455dca3840c99d6b049f9b4ca56e  nginfix.sh
 ```
 
 ## Warning
